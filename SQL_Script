@@ -1,0 +1,277 @@
+--The following script was executed on Microsoft SQL server management studio 18
+
+--DROPPING CONSTRAINT QUERIES
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_NAME='fk_ad_barcode')
+ALTER TABLE adhoc_loans
+DROP
+CONSTRAINT fk_ad_barcode
+
+go
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_NAME='fk_activity_barcode')
+ALTER TABLE activity_loans
+DROP
+CONSTRAINT fk_activity_barcode
+go
+
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_NAME='fk_cent_barcode')
+ALTER TABLE cent_affiliations
+DROP 
+CONSTRAINT fk_cent_barcode
+go
+
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_NAME='FK_user_barcode')
+Alter table users
+drop 
+constraint FK_user_barcode
+go
+
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_NAME='PK_bridge_user_equipment')
+Alter table bridge_user_equipment
+drop 
+constraint PK_bridge_user_equipment
+go
+
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_NAME='FK_bridge_user')
+Alter table bridge_user_equipment
+drop 
+constraint FK_bridge_user
+go
+
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_NAME='FK_bridge_equipment')
+Alter table bridge_user_equipment
+drop 
+constraint FK_bridge_equipment
+go
+
+-- CREATING TABLES FOR CENT PROJECT
+
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='users')
+DROP TABLE users
+go
+CREATE TABLE users ( 
+    u_user_id int not null,
+    u_email varchar(50) not null,
+    u_username varchar(50) not null,
+    u_password varchar(50) not null,
+    u_firstname varchar(50) not null, 
+    u_lastname varchar(50) not null, 
+    u_borrow_date date not null,
+    u_due_date date not null,
+    u_reason varchar(50) not null,
+    u_designation varchar(50) not null,
+    borrowed_equipment_barcode char(10) not null, 
+    CONSTRAINT pk_u_user_id PRIMARY KEY(u_user_id), 
+     )
+  
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='equipments')
+DROP TABLE equipments
+go
+CREATE TABLE equipments ( 
+    e_barcode char(10) not null,
+    e_name varchar(50) not null,
+    e_manufacture varchar(50) not null, 
+    e_model varchar(50) not null, 
+    e_make varchar(50) not null, 
+    CONSTRAINT pk_e_barcode PRIMARY KEY(e_barcode),
+     )
+
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='activity_loans')
+DROP TABLE activity_loans
+go
+create table activity_loans
+ (
+ activity_identity int IDENTITY(1,1) NOT NULL,
+ activity_equipment_barcode char(10) not null,
+ a_url varchar(255) not null, --will contain info about the activity and how to perform it along with description
+ a_poc varchar(50) not null,
+ a_lab_no varchar(20) not null,  --will show what is the activity lab number, eg lab1,lab2......
+ a_course_name varchar(20) not null, --which course that activity belongs to
+ a_borrow_date date not null,
+ a_due_date date not null,
+ a_reason varchar(50) not null,
+  CONSTRAINT pk_activity_loans PRIMARY KEY(activity_identity),
+)
+
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='adhoc_loans')
+DROP TABLE adhoc_loans
+go
+create table adhoc_loans
+ (
+ adhoc_identity int IDENTITY(1,1) NOT NULL,
+ adhoc_equipment_barcode char(10) not null,
+ ad_url varchar(255) not null,
+ ad_equipment_name varchar(25),--should match with barcode and equipment name of equipments table
+ ad_poc varchar(20) not null,
+ ad_email varchar(20) not null,--poc email
+ ad_borrow_date date not null,
+ ad_due_date date not null,
+ ad_reason varchar(20) not null,
+   CONSTRAINT pk_adhoc_loans PRIMARY KEY(adhoc_identity),
+ )
+
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='cent_affiliations')
+DROP TABLE cent_affiliations
+go
+create table cent_affiliations
+ (
+ cent_identity int IDENTITY(1,1) NOT NULL,
+ c_email varchar(50) not null,
+ c_password varchar(50) not null,
+ c_firstname varchar(20) not null,
+ c_lastname varchar(20) not null,
+ c_loaned_items_barcode char(10),
+ CONSTRAINT pk_cent_affiliations PRIMARY KEY(cent_identity),
+ )
+
+IF EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='bridge_user_equipment')
+DROP TABLE bridge_user_equipment
+go
+CREATE TABLE bridge_user_equipment ( 
+    bridge_u_identity int not null,
+    bridge_e_barcode char(10) not null,
+)  
+
+-- ADDING CONSTRAINTS TO ALL TABLES
+
+ALTER TABLE adhoc_loans
+ADD
+CONSTRAINT fk_ad_barcode FOREIGN KEY (adhoc_equipment_barcode) REFERENCES equipments(e_barcode)
+
+
+ALTER TABLE activity_loans
+ADD
+CONSTRAINT fk_activity_barcode FOREIGN KEY (activity_equipment_barcode) REFERENCES equipments(e_barcode)
+
+
+ALTER TABLE cent_affiliations
+ADD
+CONSTRAINT fk_cent_barcode FOREIGN KEY (c_loaned_items_barcode) REFERENCES equipments(e_barcode)
+
+
+ALTER TABLE bridge_user_equipment
+ADD
+CONSTRAINT PK_bridge_user_equipment PRIMARY KEY(bridge_u_identity,bridge_e_barcode),
+CONSTRAINT FK_bridge_user
+    FOREIGN KEY (bridge_u_identity)
+    REFERENCES users (u_user_id),
+  CONSTRAINT FK_bridge_equipment
+    FOREIGN KEY (bridge_e_barcode)
+    REFERENCES equipments (e_barcode)
+
+
+ALTER TABLE users
+ADD 
+CONSTRAINT FK_user_barcode
+ FOREIGN KEY (borrowed_equipment_barcode)
+ references equipments (e_barcode)
+
+
+--INSERTING IN EQUIPMENTS
+insert into equipments
+values(12345,'monitor','dell','OPTIPLEX745','1990')
+
+insert into equipments
+values(23456,'pc','dell','OPTIPLEX960','1995')
+
+insert into equipments
+values(34567,'monitor','acer','OPTIPLEX790','1996')
+
+insert into equipments
+values(45678,'monitor','samsung','OPTIPLEX900','2010')
+
+insert into equipments
+values(56789,'pc','lg','OPTIPLEX700','2011')
+
+--INSERTING IN USERS
+insert into users
+values(1,'shladdha@syr.edu','shladdha','password','shripad','laddha','2019-11-20','2019-12-01','project work','student',12345)
+
+insert into users
+values(2,'pdsankpa@syr.edu','pdsankpa','password','prachi','sankpal','2019-10-12','2019-10-19','project work','student',23456)
+
+insert into users
+values(3,'aarao@syr.edu','aarao','password','anupama','rao','2019-09-15','2019-09-22','personal','student',23456)
+
+insert into users
+values(4,'mfudge@syr.edu','mfudge','password','michael','fudge','2019-09-27','2019-10-05','research work','faculty',45678)
+
+insert into users
+values(5,'pzhang@syr.edu','pzhang','password','ping','zhang','2019-11-08','2019-11-15','research work','faculty',56789)
+
+
+--INSERTING INTO ADHOC LOANS
+insert into adhoc_loans
+values(12345,'http://dummuadhoc','monitor','poc1','poc1@gmail.com',' 2015-10-19','2015-10-26','my work')
+
+insert into adhoc_loans
+values(12345,'http://dummuadhoc','monitor','poc1','poc1@gmail.com',' 2016-10-19','2016-10-26','my work1')
+
+insert into adhoc_loans
+values(45678,'http://dummuadhoc1','monitor','poc2','poc2@gmail.com',' 2014-10-19','2014-10-26','my work2')
+
+insert into adhoc_loans
+values(23456,'http://dummuadhoc2','pc','poc3','poc3@gmail.com',' 2015-10-18','2014-10-25','my work3')
+
+--INSERTING INTO ACTIVITY LOAN
+insert into activity_loans
+values(34567,'http://dummuactivity','poc11@gmail.com','lab1','ist659',' 2010-10-18','2010-10-25','lab work')
+
+insert into activity_loans
+values(34567,'http://dummuactivity','poc11@gmail.com','lab1','ist659',' 2011-12-08','2011-12-15','lab work')
+
+insert into activity_loans
+values(56789,'http://dummuactivity1','poc12@gmail.com','lab2','ist659',' 2013-10-23','2010-10-30','lab work1')
+
+--INSERTING VALUES IN CENT TABLE 
+insert into cent_affiliations
+values('avdeshmukh@syr.edu','password','avin','deskhmukh',12345)
+ 
+insert into cent_affiliations
+values('lptalreja@syr.edu','password','lavnish','talreja',23456)
+
+insert into cent_affiliations
+values('avdeshmukh@syr.edu','password','avin','deskhmukh',12345)   
+
+insert into cent_affiliations
+values('avdeshmukh@syr.edu','password','avin','deskhmukh',23456)
+
+--INSERTING INTO BRIDGE TABLE
+insert into bridge_user_equipment
+values(2,12345)
+
+insert into bridge_user_equipment
+values(1,23456)
+
+insert into bridge_user_equipment
+values(1,34567)
+
+insert into bridge_user_equipment
+values(3,23456)
+
+insert into bridge_user_equipment
+values(4,45678)
+
+
+select * from users
+select * from equipments
+select * from adhoc_loans
+select * from activity_loans
+select * from cent_affiliations
+select * from bridge_user_equipment
+
+--DROPPING AND CREATING VIEWS
+if exists(SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_NAME='v_unique_adhoc_loans')
+drop view v_unique_adhoc_loans
+go
+create view v_unique_adhoc_loans as
+ select * from adhoc_loans where adhoc_equipment_barcode in (select distinct adhoc_equipment_barcode from adhoc_loans)
+ go
+
+--DROPPING AND CREATING VIEWS
+if exists(SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_NAME='v_unique_activity_loans')
+drop view v_unique_activity_loans
+go
+create view v_unique_activity_loans as
+ select * from activity_loans where activity_equipment_barcode in 
+ (select distinct activity_equipment_barcode from activity_loans)
+ go
